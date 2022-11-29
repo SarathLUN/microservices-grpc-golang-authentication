@@ -22,10 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type LoginServiceClient interface {
-	LoginSimpleRPC(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
-	LoginServerStreamRPC(ctx context.Context, in *LoginRequestList, opts ...grpc.CallOption) (LoginService_LoginServerStreamRPCClient, error)
-	LoginClientStreamRPC(ctx context.Context, opts ...grpc.CallOption) (LoginService_LoginClientStreamRPCClient, error)
-	LoginBiDirectionalRPC(ctx context.Context, opts ...grpc.CallOption) (LoginService_LoginBiDirectionalRPCClient, error)
+	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 }
 
 type loginServiceClient struct {
@@ -36,120 +33,20 @@ func NewLoginServiceClient(cc grpc.ClientConnInterface) LoginServiceClient {
 	return &loginServiceClient{cc}
 }
 
-func (c *loginServiceClient) LoginSimpleRPC(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
+func (c *loginServiceClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
 	out := new(LoginResponse)
-	err := c.cc.Invoke(ctx, "/auth_service.LoginService/LoginSimpleRPC", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/auth_service.LoginService/Login", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *loginServiceClient) LoginServerStreamRPC(ctx context.Context, in *LoginRequestList, opts ...grpc.CallOption) (LoginService_LoginServerStreamRPCClient, error) {
-	stream, err := c.cc.NewStream(ctx, &LoginService_ServiceDesc.Streams[0], "/auth_service.LoginService/LoginServerStreamRPC", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &loginServiceLoginServerStreamRPCClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type LoginService_LoginServerStreamRPCClient interface {
-	Recv() (*LoginResponse, error)
-	grpc.ClientStream
-}
-
-type loginServiceLoginServerStreamRPCClient struct {
-	grpc.ClientStream
-}
-
-func (x *loginServiceLoginServerStreamRPCClient) Recv() (*LoginResponse, error) {
-	m := new(LoginResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func (c *loginServiceClient) LoginClientStreamRPC(ctx context.Context, opts ...grpc.CallOption) (LoginService_LoginClientStreamRPCClient, error) {
-	stream, err := c.cc.NewStream(ctx, &LoginService_ServiceDesc.Streams[1], "/auth_service.LoginService/LoginClientStreamRPC", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &loginServiceLoginClientStreamRPCClient{stream}
-	return x, nil
-}
-
-type LoginService_LoginClientStreamRPCClient interface {
-	Send(*LoginRequest) error
-	CloseAndRecv() (*LoginResponseList, error)
-	grpc.ClientStream
-}
-
-type loginServiceLoginClientStreamRPCClient struct {
-	grpc.ClientStream
-}
-
-func (x *loginServiceLoginClientStreamRPCClient) Send(m *LoginRequest) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *loginServiceLoginClientStreamRPCClient) CloseAndRecv() (*LoginResponseList, error) {
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	m := new(LoginResponseList)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func (c *loginServiceClient) LoginBiDirectionalRPC(ctx context.Context, opts ...grpc.CallOption) (LoginService_LoginBiDirectionalRPCClient, error) {
-	stream, err := c.cc.NewStream(ctx, &LoginService_ServiceDesc.Streams[2], "/auth_service.LoginService/LoginBiDirectionalRPC", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &loginServiceLoginBiDirectionalRPCClient{stream}
-	return x, nil
-}
-
-type LoginService_LoginBiDirectionalRPCClient interface {
-	Send(*LoginRequest) error
-	Recv() (*LoginResponse, error)
-	grpc.ClientStream
-}
-
-type loginServiceLoginBiDirectionalRPCClient struct {
-	grpc.ClientStream
-}
-
-func (x *loginServiceLoginBiDirectionalRPCClient) Send(m *LoginRequest) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *loginServiceLoginBiDirectionalRPCClient) Recv() (*LoginResponse, error) {
-	m := new(LoginResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 // LoginServiceServer is the server API for LoginService service.
 // All implementations must embed UnimplementedLoginServiceServer
 // for forward compatibility
 type LoginServiceServer interface {
-	LoginSimpleRPC(context.Context, *LoginRequest) (*LoginResponse, error)
-	LoginServerStreamRPC(*LoginRequestList, LoginService_LoginServerStreamRPCServer) error
-	LoginClientStreamRPC(LoginService_LoginClientStreamRPCServer) error
-	LoginBiDirectionalRPC(LoginService_LoginBiDirectionalRPCServer) error
+	Login(context.Context, *LoginRequest) (*LoginResponse, error)
 	mustEmbedUnimplementedLoginServiceServer()
 }
 
@@ -157,17 +54,8 @@ type LoginServiceServer interface {
 type UnimplementedLoginServiceServer struct {
 }
 
-func (UnimplementedLoginServiceServer) LoginSimpleRPC(context.Context, *LoginRequest) (*LoginResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method LoginSimpleRPC not implemented")
-}
-func (UnimplementedLoginServiceServer) LoginServerStreamRPC(*LoginRequestList, LoginService_LoginServerStreamRPCServer) error {
-	return status.Errorf(codes.Unimplemented, "method LoginServerStreamRPC not implemented")
-}
-func (UnimplementedLoginServiceServer) LoginClientStreamRPC(LoginService_LoginClientStreamRPCServer) error {
-	return status.Errorf(codes.Unimplemented, "method LoginClientStreamRPC not implemented")
-}
-func (UnimplementedLoginServiceServer) LoginBiDirectionalRPC(LoginService_LoginBiDirectionalRPCServer) error {
-	return status.Errorf(codes.Unimplemented, "method LoginBiDirectionalRPC not implemented")
+func (UnimplementedLoginServiceServer) Login(context.Context, *LoginRequest) (*LoginResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
 }
 func (UnimplementedLoginServiceServer) mustEmbedUnimplementedLoginServiceServer() {}
 
@@ -182,95 +70,22 @@ func RegisterLoginServiceServer(s grpc.ServiceRegistrar, srv LoginServiceServer)
 	s.RegisterService(&LoginService_ServiceDesc, srv)
 }
 
-func _LoginService_LoginSimpleRPC_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _LoginService_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(LoginRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(LoginServiceServer).LoginSimpleRPC(ctx, in)
+		return srv.(LoginServiceServer).Login(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/auth_service.LoginService/LoginSimpleRPC",
+		FullMethod: "/auth_service.LoginService/Login",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LoginServiceServer).LoginSimpleRPC(ctx, req.(*LoginRequest))
+		return srv.(LoginServiceServer).Login(ctx, req.(*LoginRequest))
 	}
 	return interceptor(ctx, in, info, handler)
-}
-
-func _LoginService_LoginServerStreamRPC_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(LoginRequestList)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(LoginServiceServer).LoginServerStreamRPC(m, &loginServiceLoginServerStreamRPCServer{stream})
-}
-
-type LoginService_LoginServerStreamRPCServer interface {
-	Send(*LoginResponse) error
-	grpc.ServerStream
-}
-
-type loginServiceLoginServerStreamRPCServer struct {
-	grpc.ServerStream
-}
-
-func (x *loginServiceLoginServerStreamRPCServer) Send(m *LoginResponse) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func _LoginService_LoginClientStreamRPC_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(LoginServiceServer).LoginClientStreamRPC(&loginServiceLoginClientStreamRPCServer{stream})
-}
-
-type LoginService_LoginClientStreamRPCServer interface {
-	SendAndClose(*LoginResponseList) error
-	Recv() (*LoginRequest, error)
-	grpc.ServerStream
-}
-
-type loginServiceLoginClientStreamRPCServer struct {
-	grpc.ServerStream
-}
-
-func (x *loginServiceLoginClientStreamRPCServer) SendAndClose(m *LoginResponseList) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *loginServiceLoginClientStreamRPCServer) Recv() (*LoginRequest, error) {
-	m := new(LoginRequest)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func _LoginService_LoginBiDirectionalRPC_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(LoginServiceServer).LoginBiDirectionalRPC(&loginServiceLoginBiDirectionalRPCServer{stream})
-}
-
-type LoginService_LoginBiDirectionalRPCServer interface {
-	Send(*LoginResponse) error
-	Recv() (*LoginRequest, error)
-	grpc.ServerStream
-}
-
-type loginServiceLoginBiDirectionalRPCServer struct {
-	grpc.ServerStream
-}
-
-func (x *loginServiceLoginBiDirectionalRPCServer) Send(m *LoginResponse) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *loginServiceLoginBiDirectionalRPCServer) Recv() (*LoginRequest, error) {
-	m := new(LoginRequest)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
 }
 
 // LoginService_ServiceDesc is the grpc.ServiceDesc for LoginService service.
@@ -281,27 +96,10 @@ var LoginService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*LoginServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "LoginSimpleRPC",
-			Handler:    _LoginService_LoginSimpleRPC_Handler,
+			MethodName: "Login",
+			Handler:    _LoginService_Login_Handler,
 		},
 	},
-	Streams: []grpc.StreamDesc{
-		{
-			StreamName:    "LoginServerStreamRPC",
-			Handler:       _LoginService_LoginServerStreamRPC_Handler,
-			ServerStreams: true,
-		},
-		{
-			StreamName:    "LoginClientStreamRPC",
-			Handler:       _LoginService_LoginClientStreamRPC_Handler,
-			ClientStreams: true,
-		},
-		{
-			StreamName:    "LoginBiDirectionalRPC",
-			Handler:       _LoginService_LoginBiDirectionalRPC_Handler,
-			ServerStreams: true,
-			ClientStreams: true,
-		},
-	},
+	Streams:  []grpc.StreamDesc{},
 	Metadata: "login.proto",
 }
